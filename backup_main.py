@@ -63,9 +63,9 @@ def savedictionary(self):
     self.lendict = len(self.diction[keys[0]])
 
 def walkthrough(self): # os.walk: to walk through all directories and list them
-    self.k          = 0
-    self.dirlist_nr = 0
-    self.itemnr     = 0 
+    
+    
+    
     self.dirlist    = []
     self.inp        = []
     self.outp       = []
@@ -78,7 +78,7 @@ def walkthrough(self): # os.walk: to walk through all directories and list them
         dayspassed(self,i)        
         if self.delta >= threshold_days:
             if os.path.exists(output_dir):
-                self.k += 1
+                
                 self.indexlist.append(i)
                 self.inp.append(input_dir)
                 self.outp.append(output_dir)
@@ -91,7 +91,7 @@ def walkthrough(self): # os.walk: to walk through all directories and list them
     #print("k = {}".format(self.dirlist_nr))
 
 def transfer_files(self):
-    walkthrough(self)
+    
     self.k = 0 
     if len(self.indexlist) > 0:
         for i in range(len(self.indexlist)): # approved indexes 
@@ -168,13 +168,15 @@ def gridrefresh(self):
 
 
 def backupprocedure(self):
+    walkthrough(self)
     for i in range(self.lendict):
         self.input_dir  = self.diction['in'][i]
         self.output_dir = self.diction['out'][i]
         self.overwrite  = self.diction['overwrite'][i]
         self.threshold  = self.diction['threshold'][i]
         
-        dayspassed(self,i)
+        
+        
         transfer_files(self)
     return 4
 class MainFrame(gui.MyFrame):
