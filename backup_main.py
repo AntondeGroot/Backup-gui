@@ -65,80 +65,63 @@ def savedictionary(self):
 def walkthrough(self): # os.walk: to walk through all directories and list them
     
     
-    
-    self.dirlist    = []
-    self.inp        = []
-    self.outp       = []
-    self.indexlist  = []   
+    self.subdir_list   = []
+    self.dirlist       = []
+    self.inp           = []
+    self.outp          = []
+    self.indexlist     = []
+    self.overwritelist = []
     # check if you even need to consider it
     for i in range(self.lendict):
         input_dir      = self.diction['in'][i]
         output_dir     = self.diction['out'][i]
-        threshold_days = self.diction['threshold'][i]        
+        threshold_days = self.diction['threshold'][i]  
+        overwrite      = self.diction['overwrite'][i]
         dayspassed(self,i)        
-        if self.delta >= threshold_days:
+        if self.delta >= threshold_days: # is it time to update it?
+            try:
+                if not os.path.exists(output_dir):
+                    os.makedirs(output_dir)
+            except:
+                print("Drive {} is not connected".format(os.path.splitdrive(output_dir)[0]))
             if os.path.exists(output_dir):
+                for root, dirs, files in os.walk(input_dir):
+                    self.subdir_list.append(root)
+                    for file in files:
+                        self.inp.append(os.path.join(root,file))
+                        self.outp.append(os.path.join(output_dir,os.path.split(input_dir)[1],os.path.relpath(root, input_dir),file)) # split makes sure you also include the map name you're copying from
+                        
+                        self.dirlist.append(os.path.join(output_dir,os.path.split(input_dir)[1],os.path.relpath(root, input_dir)))
+                        print(os.path.relpath(root, input_dir))
+                        print(root)
+                        self.overwritelist.append(overwrite)
                 
-                self.indexlist.append(i)
-                self.inp.append(input_dir)
-                self.outp.append(output_dir)
-                subdir_list = [x[0] for x in os.walk(input_dir)]
-                self.dirlist.append(subdir_list)
-                self.dirlist_nr += len(subdir_list)   
-    self.m_textCtrl1.SetValue(str(self.outp))    
-    print(str(self.dirlist_nr))
-    self.m_gauge1.SetRange(self.k)
+    #self.m_textCtrl1.SetValue(str(self.outp))    
+    self.m_gauge1.SetRange(len(self.inp))
     #print("k = {}".format(self.dirlist_nr))
-
-def transfer_files(self):
     
+    
+def transfer_files(self,listing):
+    inplist   = listing[0]
+    outplist  = listing[1]
+    writelist = listing[2]
     self.k = 0 
-    if len(self.indexlist) > 0:
-        for i in range(len(self.indexlist)): # approved indexes 
-            self.inp[i]
-            self.outp[i]
-            self.dirlist[i]
-            self.index = self.indexlist[i]
-            subdir_list = self.dirlist[i]
-            start_dir = os.path.basename(self.inp[i])            
-            # make all directories first
-            for dirs in subdir_list:
-                
-                rel_dir = os.path.relpath(dirs, self.inp[i])
-                abs_path = os.path.join(*[self.outp[i],start_dir,rel_dir])                
-                
-                if not os.path.exists(abs_path):
-                    os.makedirs(abs_path)
-                    
-            # then save every file in every directory
-            for subdir in subdir_list:
-                
-                rel_dir = os.path.relpath(subdir, self.inp[i])
-                abs_path = os.path.join(*[self.outp[i],start_dir,rel_dir]) 
-
-                for item in os.listdir(subdir):
-                    
-                    if item not in itemlist:
-                        itemlist.append(item)
-                    
-                    itempath = os.path.join(subdir,item)
-                    outputpath = os.path.join(abs_path,item)
-                    
-                    # save unsaved files
-                    if not os.path.isdir(itempath): 
-                        self.k += 1
-                        self.m_gauge1.SetValue(self.k)
-
-                        if self.diction['overwrite'][self.index]: # if overwrite == True
-                            shutil.copy2(itempath,abs_path)                            
-                            if len(itemlist)>0:
-                                self.m_textCtrl1.SetValue("writing to: {} , file: {}".format(self.outp[i],itemlist[-1]))
-                        else:
-                            if not os.path.isfile(outputpath):                                
-                                shutil.copy2(itempath,abs_path)                                
-                                if len(itemlist)>0:
-                                    self.m_textCtrl1.SetValue("writing to: {} , file: {}".format(self.outp[i],itemlist[-1]))
-    self.m_textCtrl1.SetValue('Back up finished')
+    
+    
+    if len(inplist) > 0:
+        for i in range(len(inplist)): # over all inputs
+            self.k += 1
+            self.m_gauge1.SetValue(self.k)                    
+            # save unsaved files
+            if not os.path.isdir(inplist[i]): 
+                if writelist[i]: # if overwrite == True
+                    shutil.copy2(inplist[i],outplist[i])                            
+                    self.m_textCtrl1.SetValue("writing to: {} , file: {}".format(inplist[i],outplist[i]))
+                else:
+                    if not os.path.isfile(outplist[i]): # only if a file doesn't yet exist                                
+                        shutil.copy2(inplist[i],outplist[i])                                
+                        self.m_textCtrl1.SetValue("writing to: {} , file: {}".format(inplist[i],outplist[i]))
+    
     print("Backup finished")
     
 
@@ -165,20 +148,28 @@ def gridrefresh(self):
             for col in range(4):
                 self.m_grid1.SetCellValue(row, col, str(self.diction[keys[col]][row]))
 
-
-
+def make_all_dirs(self):
+    print("dirlist {}".format(self.dirlist))
+    for dir_i in self.dirlist:
+        if not os.path.exists(dir_i):
+            os.makedirs(dir_i)
 def backupprocedure(self):
+    print(threading.current_thread())
     walkthrough(self)
-    for i in range(self.lendict):
-        self.input_dir  = self.diction['in'][i]
-        self.output_dir = self.diction['out'][i]
-        self.overwrite  = self.diction['overwrite'][i]
-        self.threshold  = self.diction['threshold'][i]
-        
-        
-        
-        transfer_files(self)
+    nr_threads = 1
+    inputlist  = chunkIt(self.inp, nr_threads)
+    outputlist = chunkIt(self.outp, nr_threads)
+    writelist  = chunkIt(self.overwritelist, nr_threads)
+    nrthreads = len(inputlist)
+    
+    make_all_dirs(self)
+    print("all dirs made")
+    for i in range(nrthreads):
+        listing = [inputlist[i],outputlist[i],writelist[i]]
+        threading.Thread(target = transfer_files, name = 'thread{}'.format(i), args = (self,listing)).start()
+    self.m_textCtrl1.SetValue('Back up finished')
     return 4
+
 class MainFrame(gui.MyFrame):
     def __init__(self,parent):
         # initialize parent class
