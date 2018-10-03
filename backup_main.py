@@ -1,6 +1,6 @@
+# -*- coding: utf-8 -*-
 """
 Created on Thu Aug 16 17:04:57 2018
-
 @author: Anton
 """
 
@@ -21,6 +21,17 @@ try:
 except:
     pass
 
+def chunkIt(seq, num):
+    avg = len(seq) / float(num)
+    out = []
+    last = 0.0
+
+    while last < len(seq):
+        if int(last) != int(last+avg):
+            out.append(seq[int(last):int(last + avg)])
+        last += avg
+
+    return out
 
 itemlist = []
 datestamp = time.strftime("%d-%m-%Y")
@@ -308,5 +319,5 @@ def runapp():
     
     
 # initialize a thread, named 't'
-thr1 = threading.Thread(target = runapp, name = 'thread1',args = ())
-thr1.run()
+thr_main = threading.Thread(target = runapp, name = 'mainthread',args = ())
+thr_main.run()
