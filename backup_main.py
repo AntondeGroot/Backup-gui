@@ -21,19 +21,7 @@ try:
 except:
     pass
 
-def chunkIt(seq, num):
-    avg = len(seq) / float(num)
-    out = []
-    last = 0.0
 
-    while last < len(seq):
-        if int(last) != int(last+avg):
-            out.append(seq[int(last):int(last + avg)])
-        last += avg
-
-    return out
-
-itemlist = []
 datestamp = time.strftime("%d-%m-%Y")
 keys = ["in","out","overwrite","threshold","lastupdate"]
 datadir = os.getenv("LOCALAPPDATA")
@@ -50,8 +38,9 @@ if not os.path.exists(jsonpath):
     with open(jsonpath, 'w') as file:
         for key in keys:
             diction.update({key : []})
-        file.write(json.dumps(diction)) 
-#%%        
+        file.write(json.dumps(diction))   
+
+#%% relating to datastorage
 def loaddictionary(self):
     with open(jsonpath, 'r') as file:
         self.diction = json.load(file)    
@@ -61,52 +50,58 @@ def savedictionary(self):
     with open(jsonpath, 'w') as file:
         file.write(json.dumps(self.diction)) 
     self.lendict = len(self.diction[keys[0]])
+#%%
+def chunkIt(seq, num):
+    avg = len(seq) / float(num)
+    out = []
+    last = 0.0
 
-def walkthrough(self): # os.walk: to walk through all directories and list them
-    
-    
-    self.subdir_list   = []
+    while last < len(seq):
+        if int(last) != int(last+avg):
+            out.append(seq[int(last):int(last + avg)])
+        last += avg
+
+    return out
+
+def walkthrough(self): 
+    # to walk through all directories and items and list them
     self.dirlist       = []
     self.inp           = []
     self.outp          = []
-    self.indexlist     = []
     self.overwritelist = []
-    # check if you even need to consider it
+    # check all backup entries
     for i in range(self.lendict):
         input_dir      = self.diction['in'][i]
         output_dir     = self.diction['out'][i]
         threshold_days = self.diction['threshold'][i]  
         overwrite      = self.diction['overwrite'][i]
         dayspassed(self,i)        
-        if self.delta >= threshold_days: # is it time to update it?
+        # is it time to update
+        if self.delta >= threshold_days: 
             try:
                 if not os.path.exists(output_dir):
                     os.makedirs(output_dir)
+                    # Now, if a user appends an entry, then the user does not need to create the map himself
             except:
                 print("Drive {} is not connected".format(os.path.splitdrive(output_dir)[0]))
             if os.path.exists(output_dir):
                 for root, dirs, files in os.walk(input_dir):
-                    self.subdir_list.append(root)
                     for file in files:
                         self.inp.append(os.path.join(root,file))
-                        self.outp.append(os.path.join(output_dir,os.path.split(input_dir)[1],os.path.relpath(root, input_dir),file)) # split makes sure you also include the map name you're copying from
-                        
+                        # split makes sure you also include the map name you're copying from
+                        self.outp.append(os.path.join(output_dir,os.path.split(input_dir)[1],os.path.relpath(root, input_dir),file)) 
                         self.dirlist.append(os.path.join(output_dir,os.path.split(input_dir)[1],os.path.relpath(root, input_dir)))
-                        print(os.path.relpath(root, input_dir))
-                        print(root)
                         self.overwritelist.append(overwrite)
-                
-    #self.m_textCtrl1.SetValue(str(self.outp))    
+                        # now you have 3 lists of equal length such that element i of list 1 corresponds to element i of list 3
+                        # so that no further bookkeapings needs to be done.
     self.m_gauge1.SetRange(len(self.inp))
-    #print("k = {}".format(self.dirlist_nr))
     
     
-def transfer_files(self,listing):
-    inplist   = listing[0]
-    outplist  = listing[1]
-    writelist = listing[2]
-    self.k = 0 
+def transfer_files(self,infolist):
     
+    inplist   = infolist[0]
+    outplist  = infolist[1]
+    writelist = infolist[2]
     
     if len(inplist) > 0:
         for i in range(len(inplist)): # over all inputs
@@ -116,16 +111,13 @@ def transfer_files(self,listing):
             if not os.path.isdir(inplist[i]): 
                 if writelist[i]: # if overwrite == True
                     shutil.copy2(inplist[i],outplist[i])                            
-                    self.m_textCtrl1.SetValue("writing to: {} , file: {}".format(inplist[i],outplist[i]))
+                    self.m_textCtrl1.SetValue("Backing up")
                 else:
                     if not os.path.isfile(outplist[i]): # only if a file doesn't yet exist                                
                         shutil.copy2(inplist[i],outplist[i])                                
-                        self.m_textCtrl1.SetValue("writing to: {} , file: {}".format(inplist[i],outplist[i]))
+                        self.m_textCtrl1.SetValue("Backing up")    
+    self.m_textCtrl1.SetValue('Back up finished')
     
-    print("Backup finished")
-    
-
-
 def dayspassed(self,i):
     timestamp_then = datetime.datetime.strptime(self.diction['lastupdate'][i], "%d-%m-%Y")
     timestamp_now = datetime.datetime.now()
@@ -154,9 +146,10 @@ def make_all_dirs(self):
         if not os.path.exists(dir_i):
             os.makedirs(dir_i)
 def backupprocedure(self):
+    self.k = 0 
     print(threading.current_thread())
     walkthrough(self)
-    nr_threads = 1
+    nr_threads = 4
     inputlist  = chunkIt(self.inp, nr_threads)
     outputlist = chunkIt(self.outp, nr_threads)
     writelist  = chunkIt(self.overwritelist, nr_threads)
@@ -194,7 +187,8 @@ class MainFrame(gui.MyFrame):
         self.txt.WriteText("Select a folder you would like to backup, it will trace all subfolders and files within that folder.\n" \
                            "Then select a destination folder and confirm your selection. These selections are saved in \"%appdata%/local/Backup\" .\n"
                            "To remove a row of entries: simply delete one entry and press enter, the rest of the row will then be deleted.\n"
-                           "You can manually change the entries and confirm them by pressing enter.")
+                           "You can manually change the entries and confirm them by pressing enter.\n"
+                           "0 days means you always check if you need to back it up")
         # start multithread
         self.thr2 = threading.Thread(target = backupprocedure, name = 'thread2', args = (self, ))
         loaddictionary(self)
