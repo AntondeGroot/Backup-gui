@@ -167,7 +167,8 @@ class MainFrame(gui.MyFrame):
     def __init__(self,parent):
         # initialize parent class
         gui.MyFrame.__init__(self,parent)
-        
+        # make sure that when an entry is changed it doesn't automatically trigger the grid changed event
+        self.lastupdated = datetime.datetime.now() 
         # set initial directory
         self.m_dirSource.SetInitialDirectory('.')
         self.m_dirBackup.SetInitialDirectory('.')
@@ -201,47 +202,58 @@ class MainFrame(gui.MyFrame):
         
     ## LOAD ALL DATA ==========================================================
     def m_grid1OnGridCellChanged( self, event ): #in gui file it's called ...CellChange, error comes from wxbuilder, add the missing d in the gui file
-        # when a value is changed by the user
-        row = event.GetRow()
-        col = event.GetCol()
-        value = self.m_grid1.GetCellValue(row, col)
-        # see what was changed
-        if 'False' in value:
-            value = False
-            self.diction[keys[col]][row] = value
-            savedictionary(self)
-        elif 'True' in value:
-            value = True
-            self.diction[keys[col]][row] = value
-            savedictionary(self)
-        elif value == '':
-            # then remove this row
-            
-            self.diction2 = self.diction
-            self.diction2['in'].pop(row)
-            self.diction2['out'].pop(row)
-            self.diction2['overwrite'].pop(row)
-            self.diction2['threshold'].pop(row)
-            self.diction2['lastupdate'].pop(row)
-            self.diction = self.diction2    
-            print(self.diction)
-            savedictionary(self)
-                
-            gridreset(self)
-            gridrefresh(self)
-        else:
-            try:
-                value = int(value) 
-                if value >= 0:
-                    self.diction[keys[col]][row] = value
-                    savedictionary(self)
-            except:
-                pass
-            
-        gridreset(self)        
-        gridrefresh(self)
-        self.m_grid1.ForceRefresh
         
+        if (datetime.datetime.now()-self.lastupdated).seconds>1: # wait at least a second, because any changes of the grid like GridRefresh would otherwise trigger this event again, resulting in an infinite loop
+            print((datetime.datetime.now()-self.lastupdated).seconds)
+            print(type((datetime.datetime.now()-self.lastupdated).seconds))
+            self.lastupdated = datetime.datetime.now() 
+            
+            
+            print("changed")
+            # when a value is changed by the user
+            row = event.GetRow()
+            col = event.GetCol()
+            value = self.m_grid1.GetCellValue(row, col)
+            # see what was changed
+            if 'False' in value:
+                value = False
+                self.diction[keys[col]][row] = value
+                savedictionary(self)
+            elif 'True' in value:
+                value = True
+                self.diction[keys[col]][row] = value
+                savedictionary(self)
+            elif value == '':
+                # then remove this row
+                
+                self.diction2 = self.diction
+                self.diction2['in'].pop(row)
+                self.diction2['out'].pop(row)
+                self.diction2['overwrite'].pop(row)
+                self.diction2['threshold'].pop(row)
+                self.diction2['lastupdate'].pop(row)
+                self.diction = self.diction2    
+                print(self.diction)
+                savedictionary(self)
+                    
+                gridreset(self)
+                gridrefresh(self)
+            else:
+                try:
+                    value = int(value) 
+                    if value >= 0:
+                        self.diction[keys[col]][row] = value
+                        savedictionary(self)
+                except:
+                    pass
+                
+            gridreset(self)        
+            gridrefresh(self)
+            self.m_grid1.ForceRefresh
+            
+        else:
+            pass
+            
     def m_dirSourceOnDirChanged( self, event ):                
         self.input = event.GetPath()
         
