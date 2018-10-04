@@ -265,9 +265,12 @@ class MainFrame(gui.MyFrame):
                         self.diction[keys[col]][row] = value
                         savedictionary(self)
                 except:
-                    print("Invalid input in 4th column")
-                    self.diction[keys[col]][row] = 0
-                    savedictionary(self)
+                    if value == '':
+                        removerow(self,row)
+                    else:
+                        print("Invalid input in 4th column")
+                        self.diction[keys[col]][row] = 0
+                        savedictionary(self)
                 
             gridreset(self)        
             gridrefresh(self)
