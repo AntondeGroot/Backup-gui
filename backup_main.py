@@ -163,6 +163,20 @@ def backupprocedure(self):
     self.m_textCtrl1.SetValue('Back up finished')
     return 4
 
+def removerow(self,row):
+    self.diction2 = self.diction
+    self.diction2['in'].pop(row)
+    self.diction2['out'].pop(row)
+    self.diction2['overwrite'].pop(row)
+    self.diction2['threshold'].pop(row)
+    self.diction2['lastupdate'].pop(row)
+    self.diction = self.diction2    
+    #print(self.diction)
+    savedictionary(self)
+        
+    gridreset(self)
+    gridrefresh(self)
+
 class MainFrame(gui.MyFrame):
     def __init__(self,parent):
         # initialize parent class
@@ -214,38 +228,36 @@ class MainFrame(gui.MyFrame):
             row = event.GetRow()
             col = event.GetCol()
             value = self.m_grid1.GetCellValue(row, col)
-            # see what was changed
-            if 'False' in value:
-                value = False
-                self.diction[keys[col]][row] = value
-                savedictionary(self)
-            elif 'True' in value:
-                value = True
-                self.diction[keys[col]][row] = value
-                savedictionary(self)
-            elif value == '':
-                # then remove this row
-                
-                self.diction2 = self.diction
-                self.diction2['in'].pop(row)
-                self.diction2['out'].pop(row)
-                self.diction2['overwrite'].pop(row)
-                self.diction2['threshold'].pop(row)
-                self.diction2['lastupdate'].pop(row)
-                self.diction = self.diction2    
-                print(self.diction)
-                savedictionary(self)
-                    
-                gridreset(self)
-                gridrefresh(self)
-            else:
+            if col == 0 or col == 1:
+                # note: it does not check if the given path is valid
+                if value == '':
+                    removerow(self,row)
+                else:
+                    self.diction[keys[col]][row] = value
+                    savedictionary(self)
+            
+            if col == 2: 
+                if 'False' in value:
+                    value = False
+                    self.diction[keys[col]][row] = value
+                    savedictionary(self)
+                elif 'True' in value:
+                    value = True
+                    self.diction[keys[col]][row] = value
+                    savedictionary(self)
+                elif value == '':
+                    # then remove this row
+                    removerow(self,row)
+            if col == 3:
                 try:
                     value = int(value) 
                     if value >= 0:
                         self.diction[keys[col]][row] = value
                         savedictionary(self)
                 except:
-                    pass
+                    print("Invalid input in 4th column")
+                    self.diction[keys[col]][row] = 0
+                    savedictionary(self)
                 
             gridreset(self)        
             gridrefresh(self)
