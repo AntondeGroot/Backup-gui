@@ -15,7 +15,7 @@ import threading
 import wx
 import wx._adv
 import wx._html
-
+import base64
 try:
     del app
 except:
@@ -27,6 +27,12 @@ keys = ["in","out","overwrite","threshold","lastupdate"]
 datadir = os.getenv("LOCALAPPDATA")
 datadir = datadir + r"\Backup"
 jsonpath = os.path.join(datadir, 'data.json')
+
+fh = open(os.path.join(datadir,"icon.png"), "wb")
+iconstring = b'iVBORw0KGgoAAAANSUhEUgAAACYAAAAmCAYAAACoPemuAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQtJREFUeNrsWNsNhCAQJFRACZRACXZwdqAdXAt0YAmUYgmUQAnGCjxMICHkIs8FP5hkPoyBnczgAiI0MDAQBNEUmofmlch7zGbmqAqaKcinrC1uryDKcq/p1lWZLFQURwj7AqzXpcYkCsCxo1TUBCDKci6JcgFsP5+SwQegY9lxzoCiLNecKCFjzI6TNHDLkqQ4Njfcg5Nq7Q0dkz23oBBpTJQtY0yqqTo4FoyTdRD198SBO/SurL6pOjqmYrYgaZ4poEPU1JChA6RwlBMgMXdh7n2FxElKPDVVXthseeRpxXVn8+8DGL0D59PL10bJGi9+Frv4kTm49WoXa8wFRDbejqbxB2ZgwOAnwABX6sAdGZxwrwAAAABJRU5ErkJggg=='
+iconstring = b'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'
+fh.write(base64.b64decode(iconstring))
+fh.close()
 
 #%% initializing localappdata folder with data file
 if not os.path.exists(datadir):
@@ -181,6 +187,10 @@ class MainFrame(gui.MyFrame):
     def __init__(self,parent):
         # initialize parent class
         gui.MyFrame.__init__(self,parent)
+        
+        iconimage = wx.Icon(os.path.join(datadir,"icon.png"), type=wx.BITMAP_TYPE_ANY, desiredWidth=-1, desiredHeight=-1)
+        self.SetIcon(iconimage)
+        
         # make sure that when an entry is changed it doesn't automatically trigger the grid changed event
         self.lastupdated = datetime.datetime.now() 
         # set initial directory
