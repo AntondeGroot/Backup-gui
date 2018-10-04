@@ -19,7 +19,7 @@ import wx.richtext
 class MyFrame ( wx.Frame ):
 	
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 720,600 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Backup", pos = wx.DefaultPosition, size = wx.Size( 720,600 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
 		
 		self.SetSizeHints( wx.Size( 720,600 ), wx.Size( -1,600 ) )
 		self.SetBackgroundColour( wx.Colour( 254, 250, 252 ) )
